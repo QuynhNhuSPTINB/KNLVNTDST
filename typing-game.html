@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🎯 Gõ 10 ngón — Phiên bản Tiểu học</title>
+<style>
+:root {
+  --bg: #ffe4d1;
+  --accent: #ff7a59;
+  --key: #fff6f0;
+  --border: #ffbfa3;
+}
+body {
+  font-family: "Serif", sans-serif;
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+h1 {
+  color: var(--accent);
+  margin-top: 15px;
+}
+#container {
+  max-width: 800px;
+  margin: auto;
+  padding: 10px;
+}
+#nameInput, #lessonSelect, #modeSelect, #startBtn {
+  font-size: 18px;
+  padding: 8px 12px;
+  margin: 6px;
+  border-radius: 10px;
+  border: 2px solid var(--accent);
+}
+#startBtn {
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+}
+#gameArea {
+  margin-top: 15px;
+  display: none;
+}
+#targetText {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #333;
+}
+#typedText {
+  font-size: 24px;
+  color: gray;
+}
+#result {
+  font-size: 20px;
+  color: green;
+  margin-top: 8px;
+}
+#timer {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ff5733;
+  margin-bottom: 10px;
+}
+#keyboard {
+  margin: 25px auto;
+  display: inline-block;
+  text-align: center;
+  user-select: none;
+}
+.kb-row {
+  display: flex;
+  justify-content: center;
+}
+.key {
+  display: inline-block;
+  background: var(--key);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  min-width: 36px;
+  margin: 3px;
+  font-weight: bold;
+  box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+  transition: background 0.1s;
+}
+.key.active {
+  background: #ffd7c7;
+}
+#gvPanel {
+  margin-top: 35px;
+  border-top: 2px dashed var(--accent);
+  padding-top: 12px;
+  text-align: left;
+}
+#gvPanel h3 {
+  color: var(--accent);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 6px;
+  text-align: center;
+}
+th {
+  background: #fff5ee;
+}
+#adminLogin {
+  margin-top: 15px;
+  text-align: center;
+}
+button {
+  cursor: pointer;
+}
+#exportBtn, #clearBtn {
+  background: #ff7a59;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: 3px;
+}
+</style>
+</head>
+<body>
+<div id="container">
+  <h1>🎯 Trò chơi luyện gõ 10 ngón</h1>
+  <div id="setup">
+    <input id="nameInput" placeholder="Nhập tên của bạn" />
+    <select id="lessonSelect">
+      <option value="home">Hàng phím cơ bản</option>
+      <option value="upper">Hàng phím trên</option>
+      <option value="lower">Hàng phím dưới</option>
+      <option value="number">Số và ký hiệu</option>
+    </select>
+    <!-- 🌟 Thêm chọn chế độ chơi -->
+    <select id="modeSelect">
+      <option value="practice">Luyện tập</option>
+      <option value="challenge">Thử thách 30s</option>
+    </select>
+    <button id="startBtn">Bắt đầu</button>
+  </div>
+
+  <div id="gameArea">
+    <div id="timer"></div>
+    <div id="targetText"></div>
+    <div id="typedText"></div>
+    <div id="result"></div>
+  </div>
+
+  <!-- 🌈 BÀN PHÍM -->
+  <div id="keyboard">
+    <div class="kb-row" id="row1"></div>
+    <div class="kb-row" id="row2"></div>
+    <div class="kb-row" id="row3"></div>
+  </div>
+
+  <!-- 📋 BẢNG GIÁO VIÊN -->
+  <div id="gvPanel">
+    <h3>📋 Bảng theo dõi giáo viên</h3>
+    <div id="adminLogin">
+      <input type="password" id="gvPass" placeholder="Mật khẩu giáo viên" />
+      <button id="gvLoginBtn">Đăng nhập</button>
+    </div>
+    <div id="adminTools" style="display:none;">
+      <button id="exportBtn">⬇️ Xuất CSV</button>
+      <button id="clearBtn">🗑️ Xóa dữ liệu</button>
+      <table id="scoreTable">
+        <thead>
+          <tr><th>Tên</th><th>Bài</th><th>Độ chính xác (%)</th><th>Thời gian (s)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const lessons = {
+  home: "asdf jkl; asdf jkl; aa ss dd ff jj kk ll ;; asdfjkl;",
+  upper: "qwerty uiop qwe rty uio p qwert yuiop",
+  lower: "zxcvbnm zxc bnm zx cv bn mz",
+  number: "12345 67890 1 2 3 4 5 6 7 8 9 0"
+};
+const keyboardRows = [
+  ["q","w","e","r","t","y","u","i","o","p"],
+  ["a","s","d","f","g","h","j","k","l",";"],
+  ["z","x","c","v","b","n","m",",",".","/"]
+];
+const nameInput = document.getElementById("nameInput");
+const lessonSelect = document.getElementById("lessonSelect");
+const modeSelect = document.getElementById("modeSelect");
+const startBtn = document.getElementById("startBtn");
+const targetText = document.getElementById("targetText");
+const typedText = document.getElementById("typedText");
+const result = document.getElementById("result");
+const timer = document.getElementById("timer");
+const gameArea = document.getElementById("gameArea");
+const scoreTable = document.querySelector("#scoreTable tbody");
+const gvPass = document.getElementById("gvPass");
+const gvLoginBtn = document.getElementById("gvLoginBtn");
+const adminTools = document.getElementById("adminTools");
+const exportBtn = document.getElementById("exportBtn");
+const clearBtn = document.getElementById("clearBtn");
+
+function renderKeyboard(){
+  document.getElementById("row1").innerHTML = keyboardRows[0].map(k=>`<span class="key" data-key="${k}">${k}</span>`).join('');
+  document.getElementById("row2").innerHTML = keyboardRows[1].map(k=>`<span class="key" data-key="${k}">${k}</span>`).join('');
+  document.getElementById("row3").innerHTML = keyboardRows[2].map(k=>`<span class="key" data-key="${k}">${k}</span>`).join('');
+}
+renderKeyboard();
+
+let target = "", typed = "", startTime, timerId, timeLeft = 30, mode="practice";
+
+startBtn.onclick = () => {
+  const name = nameInput.value.trim();
+  if (!name) { alert("Hãy nhập tên!"); return; }
+  target = lessons[lessonSelect.value];
+  mode = modeSelect.value;
+  typed = "";
+  targetText.textContent = target;
+  typedText.textContent = "";
+  result.textContent = "";
+  timer.textContent = "";
+  gameArea.style.display = "block";
+  nameInput.disabled = true;
+  startBtn.disabled = true;
+  startTime = Date.now();
+  if (mode === "challenge") startChallengeTimer();
+};
+
+function startChallengeTimer(){
+  timeLeft = 30;
+  timer.textContent = "⏱️ Thời gian: 30s";
+  timerId = setInterval(()=>{
+    timeLeft--;
+    timer.textContent = `⏱️ Còn ${timeLeft}s`;
+    if (timeLeft <= 0){
+      clearInterval(timerId);
+      endChallenge();
+    }
+  },1000);
+}
+
+document.addEventListener("keydown", e => {
+  if (!target) return;
+  const key = e.key.toLowerCase();
+  const keySpan = document.querySelector(`.key[data-key="${key}"]`);
+  if (keySpan) {
+    keySpan.classList.add("active");
+    setTimeout(()=>keySpan.classList.remove("active"),120);
+  }
+  if (key.length === 1 || key === " ") {
+    typed += key;
+    typedText.textContent = typed;
+    checkProgress();
+  } else if (e.key === "Backspace") {
+    typed = typed.slice(0,-1);
+    typedText.textContent = typed;
+  }
+});
+
+function checkProgress(){
+  if (mode==="practice" && typed === target) {
+    const elapsed = ((Date.now()-startTime)/1000).toFixed(1);
+    const accuracy = Math.round(100*(1 - typoCount(typed, target)/target.length));
+    result.textContent = `✅ Hoàn thành! ${elapsed}s — Độ chính xác: ${accuracy}%`;
+    saveScore(nameInput.value, lessonSelect.value, accuracy, elapsed);
+    resetGame();
+  }
+}
+function endChallenge(){
+  const correct = countCorrect(typed, target);
+  result.textContent = `⏰ Hết giờ! Gõ đúng ${correct} ký tự.`;
+  nameInput.disabled = false;
+  startBtn.disabled = false;
+  target = "";
+}
+function typoCount(a,b){
+  let c=0;
+  for(let i=0;i<b.length;i++) if(a[i]!==b[i]) c++;
+  return c;
+}
+function countCorrect(a,b){
+  let c=0;
+  for(let i=0;i<a.length;i++) if(a[i]===b[i]) c++;
+  return c;
+}
+function saveScore(name, lesson, accuracy, time){
+  const data = JSON.parse(localStorage.getItem("typingScores")||"[]");
+  data.push({name,lesson,accuracy,time});
+  localStorage.setItem("typingScores",JSON.stringify(data));
+  renderScores();
+}
+function renderScores(){
+  const data = JSON.parse(localStorage.getItem("typingScores")||"[]");
+  scoreTable.innerHTML = data.map(d=>`
+    <tr>
+      <td>${d.name}</td>
+      <td>${lessonLabel(d.lesson)}</td>
+      <td>${d.accuracy}</td>
+      <td>${d.time}</td>
+    </tr>`).join('');
+}
+function lessonLabel(code){
+  return {
+    home:"Hàng cơ bản",
+    upper:"Hàng trên",
+    lower:"Hàng dưới",
+    number:"Số & ký hiệu"
+  }[code];
+}
+function resetGame(){
+  clearInterval(timerId);
+  nameInput.disabled = false;
+  startBtn.disabled = false;
+  target = "";
+}
+
+// Giáo viên đăng nhập
+gvLoginBtn.onclick = () => {
+  if (gvPass.value === "gvpass") {
+    adminTools.style.display = "block";
+    gvPass.disabled = true;
+    gvLoginBtn.disabled = true;
+    renderScores();
+  } else {
+    alert("Sai mật khẩu!");
+  }
+};
+// Xuất CSV
+exportBtn.onclick = () => {
+  const data = JSON.parse(localStorage.getItem("typingScores")||"[]");
+  if (data.length === 0) return alert("Không có dữ liệu!");
+  const csv = "Tên,Bài,Độ chính xác,Thời gian\n" + data.map(d=>`${d.name},${lessonLabel(d.lesson)},${d.accuracy},${d.time}`).join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ket_qua_go10ngon.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+// Xóa dữ liệu
+clearBtn.onclick = () => {
+  if (confirm("Bạn có chắc muốn xóa toàn bộ dữ liệu?")) {
+    localStorage.removeItem("typingScores");
+    renderScores();
+  }
+};
+</script>
+</body>
+</html>
